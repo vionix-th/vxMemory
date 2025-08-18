@@ -1,36 +1,41 @@
 # Repository Guidelines
 
+This repo hosts vmMemory, a single‑file, vanilla‑JS memory game with no build step. Keep changes small, focused, and friendly to static hosting.
+
 ## Project Structure & Module Organization
-- Root `index.html`: Single-file app (HTML/CSS/JS inlined). No build step.
-- `assets/`: Game art.
-  - `backgrounds/` and `tiles/`: SVG sources; `_png/` folders contain raster exports.
-- Game data: symbol sets live in the `THEMES` object inside `index.html`.
+- `index.html`: Entire app (HTML, CSS, JS inlined). `THEMES` defines symbol sets and game data.
+- `assets/`: Game art and media.
+  - `backgrounds/`, `backgrounds_png/`: SVG sources and raster exports.
+  - `tiles/`, `tiles_png/`: SVG sources and raster exports.
+  - `sounds/` (optional): Place copied audio here and update `<audio src>`.
+- No modules/build system; keep logic in `index.html` and prefer small helpers.
 
 ## Build, Test, and Development Commands
-- Serve locally (recommended for `localStorage` and audio):
-  - `python3 -m http.server 8000` then open `http://localhost:8000/`.
-- Open directly: double-click `index.html` (works, but timing/storage may vary across browsers).
-- Deploy: any static host (e.g., GitHub Pages) — site root is the repo root.
+- Serve locally: `python3 -m http.server 8000` → open `http://localhost:8000/`.
+- Open directly: double‑click `index.html` (note: timing/storage can vary by browser).
+- Deploy: any static host (e.g., GitHub Pages); site root is the repo root.
 
 ## Coding Style & Naming Conventions
-- Indentation: 2 spaces. Keep functions small and single‑purpose.
-- JavaScript: vanilla ES2015+; prefer `const`/`let`, arrow functions, and early returns. No frameworks.
-- CSS: use existing CSS variables, box‑shadow/radius tokens, and grid layout; keep styles in `index.html` unless a clear split is warranted.
-- Assets: use lowercase, hyphenated names (e.g., `dinosaur.svg`, `thai.png`). Place new art in `assets/backgrounds/` or `assets/tiles/` and export to matching `_png/` if needed.
-- Accessibility: preserve ARIA attributes, focus states, and keyboard support.
+- Indentation: 2 spaces. Use `const`/`let`, arrow functions, and early returns.
+- JavaScript: ES2015+, no frameworks; keep functions small and single‑purpose.
+- CSS: use existing CSS variables, grid layout, and tokenized radius/shadows; keep styles in `index.html` unless a clear split is warranted.
+- Assets: lowercase, hyphenated names (e.g., `dinosaur.svg`, `thai.png`). Place new art in `assets/backgrounds/` or `assets/tiles/` and export to matching `_png/` folders.
+- Accessibility: preserve ARIA attributes, visible focus rings, and full keyboard support.
 
 ## Testing Guidelines
-- Framework: none currently. Run manual checks before PRs:
+- Framework: none. Perform manual checks before PRs:
   - All board sizes render; flips/matches update moves and time.
   - Theme switch works; 2‑player mode tracks turns and scores.
   - Keyboard: arrows navigate; Enter/Space flips.
   - `localStorage` best time saves per grid size.
-- Optional: add browser tests (e.g., Playwright) under `e2e/` with a lightweight script and GitHub Actions later.
+- Optional: add browser tests later (e.g., Playwright) under `e2e/`.
 
 ## Commit & Pull Request Guidelines
-- Commits: imperative mood, concise scope (e.g., `ui: improve focus ring on cards`).
-- PRs: include summary, rationale, and screenshots or short clips for UI changes; list test steps and affected board sizes/themes; link issues when applicable.
-- Keep diffs focused; avoid large binary assets (>1MB). Optimize images (SVG preferred).
+- Commits: imperative, concise scope (e.g., `ui: improve focus ring on cards`).
+- PRs: include summary, rationale, and screenshots or short clips for UI changes.
+- List test steps and affected board sizes/themes; link issues.
+- Keep diffs focused; avoid large binaries (>1MB); optimize images (prefer SVG).
 
 ## Security & Configuration Tips
-- No secrets or server code. Avoid third‑party inline scripts. If external audio becomes unavailable, copy files into `assets/sounds/` and update `<audio src>` references.
+- No secrets or server code. Avoid third‑party inline scripts.
+- If external audio changes, copy files to `assets/sounds/` and update `<audio src>` references.
