@@ -27,6 +27,9 @@
     padding:8px 10px; font:inherit; cursor:pointer;
   }
   button.primary{background:var(--accent); color:#00111a; border:none}
+  button{ transition: transform .06s ease, filter .12s ease, box-shadow .12s ease; }
+  button:active{ transform: translateY(1px) scale(.98); filter: brightness(1.06); }
+  button.pressed{ box-shadow: 0 0 0 3px rgba(153,204,255,.45) inset; }
   .stats{display:grid; grid-template-columns: repeat(2,1fr); gap:10px; margin:10px 0}
   .stat{background:#10142a; padding:10px; border-radius:10px; text-align:center; border:1px solid #242c4a}
   .stat b{display:block; font-size:12px; color:#a9b6d3}
@@ -116,21 +119,39 @@
       </div>
 
       <div class="row">
-        <label for="mode">Mode</label>
+        <label for="mode" id="labelMode">Mode</label>
         <select id="mode" aria-label="Game mode">
           <option value="solo">Solo</option>
           <option value="p2">2 players (hot-seat)</option>
         </select>
       </div>
 
+      <div class="row">
+        <label for="lang" id="labelLang">Language</label>
+        <select id="lang" aria-label="Language">
+          <option value="en">English</option>
+          <option value="th">ไทย (Thai)</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="factsToggle" id="labelFacts">Fun facts on match</label>
+        <input id="factsToggle" type="checkbox" aria-label="Toggle fun facts on match" checked />
+        <button id="resetFacts">Reset facts</button>
+      </div>
+      <div class="row">
+        <label for="speakToggle" id="labelSpeak">Speak facts</label>
+        <input id="speakToggle" type="checkbox" aria-label="Toggle speaking fun facts" checked />
+      </div>
+
       <div class="stats">
-        <div class="stat"><b>Moves</b><span id="moves">0</span></div>
-        <div class="stat"><b>Time</b><span id="time">00:00</span></div>
+        <div class="stat"><b id="labelMoves">Moves</b><span id="moves">0</span></div>
+        <div class="stat"><b id="labelTime">Time</b><span id="time">00:00</span></div>
       </div>
 
       <div class="stats" id="pstats" style="display:none">
-        <div class="stat" id="p1wrap"><b>Player 1</b><span id="p1">0</span></div>
-        <div class="stat" id="p2wrap"><b>Player 2</b><span id="p2">0</span></div>
+        <div class="stat" id="p1wrap"><b id="labelP1">Player 1</b><span id="p1">0</span></div>
+        <div class="stat" id="p2wrap"><b id="labelP2">Player 2</b><span id="p2">0</span></div>
       </div>
 
       <div class="row">
@@ -150,11 +171,25 @@
   </div>
 
   <dialog id="modal" class="win">
-    <h2>Nice. You matched all cards.</h2>
+    <h2 id="winTitle">Nice. You matched all cards.</h2>
     <p id="summary"></p>
     <div style="display:flex; gap:10px; margin-top:8px">
       <button id="again" class="primary">Play again</button>
       <button id="close">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="fact">
+    <div style="display:flex; gap:12px; align-items:flex-start">
+      <img id="factImg" alt="" style="width:64px; height:64px; object-fit:contain; display:none" />
+      <div>
+        <h3 id="factTitle" style="margin:0 0 6px; font-size:18px; color:#d9efff"></h3>
+        <div id="factBody" style="margin:0; font-size:14px; color:#c7d3ea; display:grid; gap:8px"></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:12px; justify-content:flex-end">
+      <button id="factPlay">Play</button>
+      <button id="factClose" class="primary">Got it</button>
     </div>
   </dialog>
 
@@ -163,6 +198,7 @@
   <audio id="smatch" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
   <audio id="sno" src="https://actions.google.com/sounds/v1/cartoon/boing.ogg" preload="auto"></audio>
   <audio id="svictory" src="https://actions.google.com/sounds/v1/cartoon/concussive_drum_hit.ogg" preload="auto"></audio>
+  <audio id="stts" preload="auto"></audio>
 
 <script>
 (() => {
@@ -190,20 +226,69 @@
   let rows=4, cols=4, first=null, lock=false, moves=0, matches=0;
   let started=false, startTime=0, rafId=0, totalPairs=8;
   let players=1, current=0, scores=[0,0];
+  let seenFacts = new Set();
+  let factsEnabled = true;
+  let lang = 'en';
+  let ttsEnabled = true;
 
   const board = $('#board'), timeEl = $('#time'), movesEl = $('#moves');
   const sizeSel = $('#size'), themeSel = $('#theme'), modeSel = $('#mode');
+  const langSel = $('#lang');
+  const factsToggle = $('#factsToggle');
+  const resetFactsBtn = $('#resetFacts');
+  const speakToggle = $('#speakToggle');
 
   function applyThemeVisuals(){
     document.body.classList.toggle('theme-thai', themeSel.value==='thai');
     document.body.classList.toggle('theme-dinosaur', themeSel.value==='dinosaur');
   }
   const live = $('#live'), modal = $('#modal'), summary = $('#summary');
+  const factDlg = $('#fact'), factTitle=$('#factTitle'), factBody=$('#factBody'), factImg=$('#factImg');
+  $('#factClose').addEventListener('click', () => factDlg.close());
+  factDlg.addEventListener('close', () => { try{ stts.pause(); stts.currentTime = 0; }catch(_){} try{ speechSynthesis.cancel(); }catch(_){} });
+  $('#factPlay').addEventListener('click', (e) => { onActivate(e.currentTarget); replayFactAudio(); });
   const bestLabel = $('#bestLabel');
   const pstats = $('#pstats'), p1El = $('#p1'), p2El = $('#p2');
   const p1wrap = $('#p1wrap'), p2wrap = $('#p2wrap');
 
   const sflip=$('#sflip'), smatch=$('#smatch'), sno=$('#sno'), svictory=$('#svictory');
+  const stts=$('#stts');
+  function haptic(ms=8){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){} }
+
+  // Remember last fact for replay
+  let lastFact = null; // {theme, base, content}
+
+  // Simple cookie helpers
+  function setCookie(name, value, days=365){
+    const d = new Date(); d.setTime(d.getTime()+days*24*60*60*1000);
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+  }
+  function getCookie(name){
+    const m = document.cookie.match(new RegExp('(?:^|; )'+name.replace(/([.$?*|{}()\[\]\\/+^])/g,'\\$1')+'=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function saveSettings(){
+    setCookie('vm-size', sizeSel.value);
+    setCookie('vm-theme', themeSel.value);
+    setCookie('vm-mode', modeSel.value);
+    setCookie('vm-facts', factsToggle.checked ? '1' : '0');
+    setCookie('vm-lang', langSel.value);
+    setCookie('vm-tts', speakToggle.checked ? '1' : '0');
+  }
+  function loadSettings(){
+    const s = getCookie('vm-size'); if(s) sizeSel.value = s;
+    const t = getCookie('vm-theme'); if(t) themeSel.value = t;
+    const m = getCookie('vm-mode'); if(m) modeSel.value = m;
+    const f = getCookie('vm-facts');
+    factsEnabled = f===null ? true : f==='1';
+    factsToggle.checked = factsEnabled;
+    const L = getCookie('vm-lang') || (navigator.language||'en').slice(0,2).toLowerCase();
+    lang = (L==='th' ? 'th' : 'en');
+    langSel.value = lang;
+    const T = getCookie('vm-tts');
+    ttsEnabled = T===null ? true : T==='1';
+    speakToggle.checked = ttsEnabled;
+  }
 
   function startTimer(){ if(started) return; started = true; startTime = now(); tick(); }
   function stopTimer(){ cancelAnimationFrame(rafId); started = false; }
@@ -216,7 +301,7 @@
   function bestKey(){ return `mem-best-${rows}x${cols}`; }
   function loadBest(){
     const v = localStorage.getItem(bestKey());
-    bestLabel.textContent = v ? `Best: ${v}` : 'Best: —';
+    bestLabel.textContent = v ? `${t('best')}: ${v}` : `${t('best')}: —`;
   }
   function maybeSetBest(){
     const cur = timeEl.textContent, prev = localStorage.getItem(bestKey());
@@ -238,6 +323,8 @@
     first=null; lock=false; moves=0; matches=0;
     movesEl.textContent='0'; timeEl.textContent='00:00';
     stopTimer(); started=false;
+    // Load per-theme, per-language seen facts from cookie
+    seenFacts = loadSeenFacts();
 
     computeGrid();
     applyThemeVisuals();
@@ -247,7 +334,7 @@
     if(players===2){
       pstats.style.display='grid';
       p1El.textContent='0'; p2El.textContent='0';
-      bestLabel.textContent = 'Hot-seat: P1 vs P2';
+      bestLabel.textContent = i18n[lang].hotseat;
     }else{
       pstats.style.display='none';
       loadBest();
@@ -274,6 +361,7 @@
         const src = sym.slice(4);
         const base = src.split('/').pop().replace(/\.[a-zA-Z0-9]+$/, '');
         card.dataset.symbol = base;
+        card.dataset.img = src;
         card.innerHTML = `
           <div class="face back">?</div>
           <div class="face front" aria-hidden="true"><img src="${src}" alt=""></div>
@@ -307,12 +395,12 @@
     if(players!==2){ p1wrap.classList.remove('turn'); p2wrap.classList.remove('turn'); return; }
     p1wrap.classList.toggle('turn', current===0);
     p2wrap.classList.toggle('turn', current===1);
-    live.textContent = `Player ${current+1}'s turn`;
+    live.textContent = t('turn', {n: current+1});
   }
 
   function getCard(idx){ return board.querySelector(`.card[data-index="${idx}"]`); }
 
-  function flip(card){
+  async function flip(card){
     if(lock) return;
     if(card.classList.contains('matched')) return;
     const pressed = card.getAttribute('aria-pressed') === 'true';
@@ -324,7 +412,7 @@
 
     if(!first){
       first = card;
-      live.textContent = 'First card flipped';
+      live.textContent = t('first_flip');
       return;
     }
     moves++; movesEl.textContent = String(moves);
@@ -340,15 +428,31 @@
       if(smatch){ try{smatch.currentTime=0; smatch.play();}catch(e){} }
       if(players===2){
         scores[current]++; (current===0 ? p1El : p2El).textContent = String(scores[current]);
-        live.textContent = `Player ${current+1} scores`;
+        live.textContent = t('score', {n: current+1});
       }else{
-        live.textContent = 'Match';
+        live.textContent = t('match');
       }
-      if(matches === totalPairs){ onWin(); }
+      // Show fact on successful match (once per symbol per game)
+      const wasLast = (matches === totalPairs);
+      let factShownPromise = Promise.resolve(false);
+      if(factsEnabled){
+        const base = card.dataset.symbol;
+        const imgSrc = card.dataset.img || '';
+        factShownPromise = showFactFor(base, imgSrc);
+      }
+      if(wasLast){
+        const factShown = await factShownPromise;
+        if(factShown){
+          const onClose = () => { factDlg.removeEventListener('close', onClose); onWin(); };
+          factDlg.addEventListener('close', onClose);
+        }else{
+          onWin();
+        }
+      }
     }else{
       lock = true;
       if(sno){ try{sno.currentTime=0; sno.play();}catch(e){} }
-      live.textContent = players===2 ? `No match. Switching to Player ${((current+1)%2)+1}` : 'No match';
+      live.textContent = players===2 ? t('no_match_switch', {n: ((current+1)%2)+1}) : t('no_match');
       const a=first, b=card;
       setTimeout(() => {
         a.setAttribute('aria-pressed','false');
@@ -359,29 +463,219 @@
     }
   }
 
+  // Inline FACTS removed; facts now loaded from assets/facts/{theme}/{symbol}_{lang}.json
+
+  function titleCase(s){
+    return s.replace(/[-_]/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  async function showFactFor(base, imgSrc){
+    const theme = themeSel.value;
+    if(theme !== 'thai' && theme !== 'dinosaur') return false;
+    if(seenFacts.has(base)) return false;
+
+    // Try per-tile JSON: assets/facts/{theme}/{base}_{lang}.json
+    const langPref = lang;
+    const tryPaths = [`assets/facts/${theme}/${base}_${langPref}.json`];
+    if(langPref !== 'en') tryPaths.push(`assets/facts/${theme}/${base}_en.json`);
+
+    let content = null;
+    for(const p of tryPaths){
+      try{
+        const res = await fetch(p, {cache:'no-cache'});
+        if(res.ok){ content = await res.json(); break; }
+      }catch(e){ /* file fetch may fail on file://; we'll fall back */ }
+    }
+
+    if(!content){
+      // Graceful fallback: generic message so facts still show on file:// or missing JSON
+      const name = titleCase(base);
+      const def = (i18n[lang].fact_default || 'You matched "{name}".').replace('{name}', name);
+      content = { title: name, paragraphs: [def] };
+    }
+
+    seenFacts.add(base);
+    saveSeenFacts();
+    factTitle.textContent = content.title || titleCase(base);
+    factBody.innerHTML = '';
+    const paras = Array.isArray(content.paragraphs) ? content.paragraphs : [String(content.body||'')];
+    paras.filter(Boolean).forEach(p => {
+      const el = document.createElement('p');
+      el.style.margin = '0';
+      el.textContent = String(p).trim();
+      factBody.appendChild(el);
+    });
+    const img = content.image || imgSrc;
+    if(img){ factImg.src = img; factImg.style.display = 'block'; }
+    else { factImg.style.display = 'none'; }
+    try { factDlg.showModal(); } catch(_) {}
+    lastFact = { theme, base, content };
+    // Auto speak or play according to toggle
+    await speakOrPlay(theme, base, content, /*force*/ false);
+    return true;
+  }
+
+  async function speakOrPlay(theme, base, content, force){
+    try{ stts.pause(); stts.currentTime = 0; }catch(_){ }
+    try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(_){ }
+    if(force || ttsEnabled){
+      const candidates = [
+        `assets/tts/${theme}/${base}_${lang}.m4a`,
+        `assets/tts/${theme}/${base}_${lang}.aiff`
+      ];
+      for(const url of candidates){
+        try{ stts.src = url; stts.currentTime = 0; await stts.play(); return; }catch(_){ }
+      }
+      if('speechSynthesis' in window){
+        try{
+          const txtParts = [];
+          if(content.title) txtParts.push(String(content.title));
+          const ps = Array.isArray(content.paragraphs) ? content.paragraphs : [String(content.body||'')];
+          txtParts.push(ps.join(' '));
+          const utter = new SpeechSynthesisUtterance(txtParts.join('. ') + '.');
+          utter.lang = (lang==='th') ? 'th-TH' : 'en-US';
+          const vs = window.speechSynthesis.getVoices();
+          const prefer = vs.find(v => (v.lang||'').toLowerCase().startsWith(utter.lang.toLowerCase()))
+                      || vs.find(v => (v.lang||'').toLowerCase().startsWith((lang==='th'?'th':'en')));
+          if(prefer) utter.voice = prefer;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utter);
+        }catch(_){ }
+      }
+    }
+  }
+
+  async function replayFactAudio(){
+    if(!lastFact) return;
+    await speakOrPlay(lastFact.theme, lastFact.base, lastFact.content, /*force*/ true);
+  }
+
+  // Persist seen facts in cookies per theme+language
+  function seenFactsKey(){ return `vm-seen-${themeSel.value}-${lang}`; }
+  function loadSeenFacts(){
+    const raw = getCookie(seenFactsKey());
+    if(!raw) return new Set();
+    try{ return new Set(raw.split(',').filter(Boolean)); }catch(_){ return new Set(); }
+  }
+  function saveSeenFacts(){
+    try{
+      const v = Array.from(seenFacts).join(',');
+      setCookie(seenFactsKey(), v, 30);
+    }catch(_){ /* ignore cookie overflow */ }
+  }
+
   function onWin(){
     stopTimer();
     const t = timeEl.textContent;
     if(players===2){
       const [s1,s2] = scores;
-      const verdict = s1===s2 ? 'Tie' : (s1>s2 ? 'Player 1 wins' : 'Player 2 wins');
-      summary.textContent = `${verdict}. P1 ${s1} – P2 ${s2}. Time ${t}, Moves ${moves}.`;
+      const verdict = s1===s2 ? i18n[lang].tie : (s1>s2 ? i18n[lang].p1_wins : i18n[lang].p2_wins);
+      summary.textContent = `${verdict}. ${i18n[lang].p1} ${s1} – ${i18n[lang].p2} ${s2}. ${i18n[lang].time} ${t}, ${i18n[lang].moves} ${moves}.`;
     }else{
       const improved = maybeSetBest();
-      summary.textContent = `Time ${t}, Moves ${moves}.` + (improved ? ' New best.' : '');
+      summary.textContent = `${i18n[lang].time} ${t}, ${i18n[lang].moves} ${moves}.` + (improved ? ` ${i18n[lang].new_best}` : '');
     }
     if(svictory){ try{svictory.currentTime=0; svictory.play();}catch(e){} }
     modal.showModal();
   }
 
-  $('#restart').addEventListener('click', () => deal());
-  $('#new').addEventListener('click', () => { deal(); });
-  $('#again').addEventListener('click', () => { modal.close(); deal(); });
-  $('#close').addEventListener('click', () => modal.close());
-  sizeSel.addEventListener('change', () => deal());
-  themeSel.addEventListener('change', () => deal());
-  modeSel.addEventListener('change', () => deal());
+  function onActivate(btn){ btn.classList.add('pressed'); setTimeout(()=>btn.classList.remove('pressed'),150); haptic(10); }
+  $('#restart').addEventListener('click', (e) => { onActivate(e.currentTarget); deal(); });
+  $('#new').addEventListener('click', (e) => { onActivate(e.currentTarget); deal(); });
+  $('#again').addEventListener('click', (e) => { onActivate(e.currentTarget); modal.close(); deal(); });
+  $('#close').addEventListener('click', (e) => { onActivate(e.currentTarget); modal.close(); });
+  sizeSel.addEventListener('change', () => { saveSettings(); deal(); });
+  themeSel.addEventListener('change', () => { saveSettings(); deal(); });
+  modeSel.addEventListener('change', () => { saveSettings(); deal(); });
+  factsToggle.addEventListener('change', () => { factsEnabled = factsToggle.checked; saveSettings(); haptic(6); });
+  langSel.addEventListener('change', () => { lang = langSel.value; saveSettings(); applyLanguage(); deal(); });
+  resetFactsBtn.addEventListener('click', (e) => {
+    onActivate(e.currentTarget);
+    // Clear current theme+language seen-facts cookie and in-memory set
+    setCookie(seenFactsKey(), '', -1);
+    seenFacts = new Set();
+    live.textContent = t('facts_reset_done');
+  });
+  speakToggle.addEventListener('change', () => { ttsEnabled = speakToggle.checked; saveSettings(); haptic(6); try{ speechSynthesis.cancel(); }catch(_){} });
 
+  // I18N
+  const i18n = {
+    en: {
+      board: 'Board', symbols: 'Symbols', mode: 'Mode', language: 'Language', facts: 'Fun facts on match',
+      play: 'Play',
+      speak: 'Speak facts',
+      moves: 'Moves', time: 'Time', best: 'Best',
+      p1: 'P1', p2: 'P2', player1: 'Player 1', player2: 'Player 2',
+      restart: 'Restart', new_game: 'New Game', play_again: 'Play again', close: 'Close', got_it: 'Got it',
+      keyboard: 'Keyboard: arrows to move, Enter/Space to flip. Screen reader updates live.',
+      win_title: 'Nice. You matched all cards.',
+      hotseat: 'Hot-seat: P1 vs P2',
+      first_flip: 'First card flipped', match: 'Match', no_match: 'No match',
+      no_match_switch: (p) => `No match. Switching to Player ${p.n}`,
+      turn: (p) => `Player ${p.n}'s turn`, score: (p) => `Player ${p.n} scores`,
+      tie: 'Tie', p1_wins: 'Player 1 wins', p2_wins: 'Player 2 wins', new_best: 'New best.',
+      fact_default: 'You matched “{name}”.',
+      reset_facts: 'Reset shown facts',
+      facts_reset_done: 'Fun facts reset for this theme.'
+    },
+    th: {
+      board: 'กระดาน', symbols: 'สัญลักษณ์', mode: 'โหมด', language: 'ภาษา', facts: 'ข้อเท็จจริงสนุกเมื่อจับคู่ได้',
+      play: 'เล่นเสียง',
+      speak: 'อ่านข้อเท็จจริงให้ฟัง',
+      moves: 'จำนวนครั้ง', time: 'เวลา', best: 'สถิติที่ดีที่สุด',
+      p1: 'ผู้เล่น 1', p2: 'ผู้เล่น 2', player1: 'ผู้เล่น 1', player2: 'ผู้เล่น 2',
+      restart: 'เริ่มใหม่', new_game: 'เกมใหม่', play_again: 'เล่นอีกครั้ง', close: 'ปิด', got_it: 'รับทราบ',
+      keyboard: 'คีย์บอร์ด: ปุ่มลูกศรเพื่อเลื่อน Enter/Space เพื่อเปิดการ์ด หน้าจอผู้อ่านประกาศสด',
+      win_title: 'เยี่ยม! คุณจับคู่การ์ดครบทั้งหมดแล้ว',
+      hotseat: 'ผลัดกันเล่น: ผู้เล่น 1 vs ผู้เล่น 2',
+      first_flip: 'เปิดการ์ดใบแรกแล้ว', match: 'จับคู่สำเร็จ', no_match: 'ไม่ตรงกัน',
+      no_match_switch: (p) => `ไม่ตรงกัน สลับเป็นผู้เล่น ${p.n}`,
+      turn: (p) => `ตาของผู้เล่น ${p.n}`, score: (p) => `ผู้เล่น ${p.n} ได้คะแนน`,
+      tie: 'เสมอ', p1_wins: 'ผู้เล่น 1 ชนะ', p2_wins: 'ผู้เล่น 2 ชนะ', new_best: 'สถิติใหม่',
+      fact_default: 'คุณจับคู่ “{name}” ได้',
+      reset_facts: 'รีเซ็ตข้อเท็จจริงที่เปิดแล้ว',
+      facts_reset_done: 'ล้างข้อเท็จจริงของธีมนี้แล้ว'
+    }
+  };
+  function t(key, params){
+    const v = i18n[lang][key];
+    if(typeof v === 'function') return v(params||{});
+    return v || key;
+  }
+  function applyLanguage(){
+    $('#labelMoves').textContent = t('moves');
+    $('#labelTime').textContent = t('time');
+    $('#labelP1').textContent = t('player1');
+    $('#labelP2').textContent = t('player2');
+    $('#labelMode').textContent = t('mode');
+    $('#labelLang').textContent = t('language');
+    $('#labelFacts').textContent = t('facts');
+    $('#labelSpeak').textContent = t('speak');
+    $('#winTitle').textContent = t('win_title');
+    $('#again').textContent = t('play_again');
+    $('#close').textContent = t('close');
+    $('#factClose').textContent = t('got_it');
+    $('#factPlay').textContent = t('play');
+    $('#restart').textContent = t('restart');
+    $('#new').textContent = t('new_game');
+    $('#resetFacts').textContent = t('reset_facts');
+    // panel labels
+    document.querySelector('label[for="size"]').textContent = t('board');
+    document.querySelector('label[for="theme"]').textContent = t('symbols');
+    document.querySelector('.row.a11y').textContent = t('keyboard');
+    // mode select options
+    modeSel.options[0].textContent = t('solo') || 'Solo';
+    modeSel.options[1].textContent = t('p2label') || '2 players (hot-seat)';
+    // stats header adjusted in loadBest
+    loadBest();
+  }
+  // Extend labels missing in dict
+  i18n.en.solo = 'Solo'; i18n.en.p2label = '2 players (hot-seat)';
+  i18n.th.solo = 'เล่นคนเดียว'; i18n.th.p2label = 'ผู้เล่น 2 คน (ผลัดกัน)';
+
+  // Initialize from cookies then start
+  loadSettings();
+  applyLanguage();
   deal();
 })();
 </script>
