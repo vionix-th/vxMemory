@@ -1,0 +1,10 @@
+vmMemory — a minimalist memory game
+
+Copyright (c) 2025 Vionix Consulting
+
+Licensing
+- Code and original graphics: GNU GPL v3.0 or later. See LICENSE.
+- External audio: Hotlinked from https://actions.google.com/sounds; not included in this repository and not covered by the repository’s license.
+
+Notes
+- If you add local audio files under `assets/sounds/`, ensure their licenses are GPL‑compatible and document source and license per file (e.g., in `assets/sounds/README.md`).

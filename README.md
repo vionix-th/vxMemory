@@ -1,0 +1,37 @@
+# vmMemory
+
+A minimalist, single‑file memory game built with vanilla JavaScript, HTML, and CSS. No build tools, no dependencies — just open and play.
+
+## Features
+- Multiple board sizes (up to 10×10).
+- Themes: Classic, Animals, Foods, Shapes, Thai, Dinosaur.
+- Solo or 2‑player hot‑seat mode with turn/score tracking.
+- Accessible: keyboard navigation, ARIA live updates, visible focus.
+- Best time stored per grid size via `localStorage`.
+
+## Getting Started
+- Quick open: double‑click `index.html` (behavior may vary by browser).
+- Local server: `python3 -m http.server 8000` then visit `http://localhost:8000/`.
+- Deploy: any static host (e.g., GitHub Pages). Site root is the repo root.
+
+## Controls
+- Arrows: move focus between cards.
+- Enter/Space: flip card.
+- Buttons: Restart or start a New Game from the side panel.
+
+## Project Structure
+- `index.html`: Entire app (HTML/CSS/JS inlined). `THEMES` defines symbol sets and game data.
+- `assets/`: Game art/media.
+  - `backgrounds/`, `backgrounds_png/`: SVG sources and raster exports.
+  - `tiles/`, `tiles_png/`: SVG sources and raster exports.
+  - `sounds/` (optional): add local audio and update `<audio src>` in `index.html`.
+
+## Contributing
+See `AGENTS.md` for coding style, testing checks, and PR guidelines. Keep changes small, focused, and framework‑free.
+
+## License
+- Code and original graphics: GPL‑3.0‑or‑later. See `LICENSE`.
+- External audio is hotlinked from actions.google.com/sounds and is not included in this repo.
+
+## Copyright
+© 2025 Vionix Consulting. vmMemory is free software released under the GNU GPL v3.0 or later.
