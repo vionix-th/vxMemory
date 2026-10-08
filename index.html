@@ -84,38 +84,55 @@
     background-size: cover, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;
   }
 
-  /* Publisher credit and project resources follow the active game theme. */
-  .publisher-attribution{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:8px;border-top:1px solid #2d365c}
-  .publisher-credit{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--text);font-size:12px;text-underline-offset:3px}
-  .publisher-credit img{padding:3px;background:#fff;border-radius:5px;object-fit:contain}
-  .publisher-credit:focus-visible,.project-links a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .attribution-about{min-height:44px;font-size:14px}
-  .about-dialog{width:min(480px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--panel);color:var(--text);border:1px solid #2d365c}
-  .about-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .about-dialog-header h2{margin:0;font-size:20px}
-  .about-dialog p{line-height:1.6}
-  .project-links{display:flex;flex-wrap:wrap;gap:4px 16px}
-  .project-links a{display:inline-flex;align-items:center;min-height:44px;color:var(--text);text-underline-offset:3px}
-  .about-copyright{font-size:12px}
-  /* Compact project actions and provider-owned checkout. */
-  .publisher-attribution{justify-content:space-between;gap:4px 12px}
-  .project-actions{display:flex;align-items:center;gap:4px}
-  .publisher-attribution .attribution-about{border:0;background:transparent;box-shadow:none;padding:8px 10px;color:var(--text);font-size:12px}
-  .publisher-credit{text-decoration:none;opacity:.85}
-  .publisher-credit:hover{text-decoration:underline;opacity:1}
-  .support-dialog{width:min(480px,calc(100% - 16px));max-height:calc(100dvh - 16px);overflow:hidden;padding:0;background:var(--panel);color:var(--text);border:1px solid #2d365c}
-  .support-dialog[open]{display:flex;flex-direction:column}
-  .support-header{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid #2d365c}
-  .support-header h2{margin:0;font-size:18px;overflow-wrap:anywhere}
-  .support-close{flex-shrink:0;width:44px;height:44px;border:0;border-radius:50%;padding:0;background:transparent;color:var(--text);font-size:28px}
-  .support-close:hover{background:rgba(128,128,128,.12)}
-  .support-close:focus-visible,.support-feedback a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .support-body{position:relative;min-height:0;overflow:auto;padding:0;background:#f9f9f9}
-  .support-feedback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:#f9f9f9;color:#343444;text-align:center}
-  .support-feedback[hidden],.support-feedback a[hidden]{display:none}
-  .support-feedback p{margin:0;line-height:1.6}
-  .support-feedback a{display:inline-flex;align-items:center;min-height:44px;color:#343444;text-underline-offset:3px}
-  .support-body iframe{display:block;width:100%;height:712px;border:0;background:#f9f9f9;color-scheme:light}
+  .publisher-attribution { margin-top: 16px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+  /* Publisher identity and project dialogs follow the active game theme. */
+  .publisher-attribution { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+  .publisher-credit { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px; color: var(--text); text-decoration: none; border-radius: 6px; }
+  .publisher-copy { display: grid; min-width: 0; gap: 3px; }
+  .publisher-copy strong { font-size: 14px; line-height: 1.2; }
+  .publisher-copy > span { font-size: 11px; opacity: .8; }
+  .publisher-credit img, .about-identity img { display: block; object-fit: contain; padding: 4px; background: #fff; border-radius: 7px; }
+  .publisher-credit:hover .publisher-copy > span { opacity: 1; }
+  .project-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .attribution-about { display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; height: auto; min-height: 44px; padding: 8px 10px; font-size: 12px; }
+  .publisher-attribution .attribution-about { border: 0; background: transparent; box-shadow: none; color: var(--text); }
+  .publisher-attribution .attribution-about:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .project-icon { display: block; flex-shrink: 0; }
+  .about-dialog, .support-dialog { width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 24px); overflow: hidden; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: var(--radius); background: var(--panel); color: var(--text); }
+  .about-dialog[open], .support-dialog[open] { display: flex; flex-direction: column; }
+  .about-dialog::backdrop, .support-dialog::backdrop { background: rgba(5,8,20,.7); }
+  .about-dialog-header, .support-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 24px; border-bottom: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+  .about-dialog-header h2, .support-header h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+  .support-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text); font-size: 28px; }
+  .support-close:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .about-content { display: grid; gap: 20px; min-height: 0; overflow: auto; padding: 24px; user-select: text; -webkit-user-select: text; }
+  .about-identity { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 14px; color: var(--text); text-decoration: none; border-radius: 6px; }
+  .about-identity img { padding: 6px; }
+  .about-identity strong { font-size: 21px; }
+  .about-identity .publisher-copy > span { font-size: 12px; }
+  .about-description { margin: 0; font-size: 13px; line-height: 1.6; opacity: .85; }
+  .project-links { display: grid; gap: 8px; }
+  .project-resource { display: grid; grid-template-columns: 20px minmax(0, 1fr) 14px; align-items: center; gap: 12px; min-height: 56px; padding: 12px; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none; }
+  .project-resource:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .project-licenses { display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .project-licenses a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text); font-size: 12px; text-underline-offset: 3px; }
+  .about-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent); padding-top: 16px; }
+  .about-copyright { font-size: 11px; opacity: .8; }
+  .about-footer .attribution-about { border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 8px; background: transparent; color: var(--text); }
+  .about-dialog :focus-visible, .publisher-attribution :focus-visible, .support-close:focus-visible, .support-feedback a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .support-body { position: relative; min-height: 0; overflow: auto; padding: 0; background: #f9f9f9; }
+  #supportFrameHost { display: grid; place-items: center; padding: 24px; }
+  .support-feedback { position: absolute; z-index: 1; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: #f9f9f9; color: #343444; text-align: center; }
+  .support-feedback[hidden], .support-feedback a[hidden] { display: none; }
+  .support-feedback p { margin: 0; line-height: 1.6; }
+  .support-feedback a { display: inline-flex; align-items: center; min-height: 44px; color: #343444; text-underline-offset: 3px; }
+  .support-body iframe { display: block; width: 100%; height: 576px; border: 0; background: #f9f9f9; color-scheme: light; }
+  @media (max-width: 420px) {
+    .about-content { padding: 20px; gap: 16px; }
+    .about-dialog-header { padding-inline: 20px; }
+    .support-header { padding-inline: 16px; }
+    #supportFrameHost { padding: 16px; }
+  }
 
 </style>
 </head>
@@ -200,15 +217,15 @@
         Keyboard: arrows to move, Enter/Space to flip. Screen reader updates live.
       </div>
       <footer class="publisher-attribution">
-        <a class="publisher-credit" href="https://vionix.cloud" target="_blank" rel="noopener noreferrer">
-          <img src="assets/branding/vionix-logo.png" width="24" height="24" alt="" />
-          <span data-branding="by_vionix">By Vionix Consulting</span>
-        </a>
-        <div class="project-actions">
-        <button id="aboutBtn" type="button" class="attribution-about" data-branding="about">About</button>
-        <button id="supportBtn" type="button" class="attribution-about" data-branding="support_short">Support this project</button>
-        </div>
-      </footer>
+          <a class="publisher-credit" href="https://vionix.cloud" target="_blank" rel="noopener noreferrer">
+            <img src="assets/branding/vionix-logo.png" width="32" height="32" alt="" />
+            <span class="publisher-copy"><strong>vxMemory</strong><span data-branding="by_vionix">By Vionix Consulting</span></span>
+          </a>
+          <div class="project-actions">
+            <button id="aboutBtn" class="attribution-about" type="button"><svg class="project-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 11v6M12 7h.01"/></svg><span data-branding="about">About</span></button>
+            <button id="supportBtn" class="attribution-about" type="button"><svg class="project-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span data-branding="support_short">Support</span></button>
+          </div>
+        </footer>
       <div aria-live="polite" aria-atomic="true" class="sr" id="live" style="position:absolute;left:-9999px"></div>
     </aside>
 
@@ -241,18 +258,27 @@
   <dialog id="aboutDialog" class="about-dialog" aria-labelledby="aboutTitle">
     <div class="about-dialog-header">
       <h2 id="aboutTitle" data-branding="about_title">About vxMemory</h2>
-      <button id="aboutCloseBtn" type="button" class="attribution-about" data-branding="close" autofocus>Close</button>
+      <button id="aboutCloseBtn" class="support-close" type="button" autofocus><span aria-hidden="true">×</span></button>
     </div>
-    <p data-branding="about_description">A browser memory game with themed cards, solo play, and two-player hot-seat mode. Created by Vionix Consulting.</p>
-    <nav class="project-links" aria-label="Project links">
-      <a href="https://vionix.cloud" target="_blank" rel="noopener noreferrer" data-branding="visit_vionix">Visit Vionix Consulting</a>
-      <a href="https://github.com/vionix-th/vxMemory" target="_blank" rel="noopener noreferrer" data-branding="source_code">Source code</a>
-      <a href="https://github.com/vionix-th/vxMemory/issues" target="_blank" rel="noopener noreferrer" data-branding="report_issue">Report an issue</a>
-      <a href="https://github.com/vionix-th/vxMemory/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-branding="code_license">Code license (GPL-3.0-or-later)</a>
-      <a href="https://github.com/vionix-th/vxMemory/blob/main/NOTICE" target="_blank" rel="noopener noreferrer" data-branding="asset_notices">Asset notices</a>
-    </nav>
-    <button id="aboutSupportBtn" type="button" class="attribution-about" data-branding="support_short">Support this project</button>
-    <p class="about-copyright">© Vionix Consulting</p>
+    <div class="about-content">
+      <a class="about-identity" href="https://vionix.cloud" target="_blank" rel="noopener noreferrer">
+        <img src="assets/branding/vionix-logo.png" width="48" height="48" alt="" />
+        <span class="publisher-copy"><strong>vxMemory</strong><span data-branding="by_vionix">By Vionix Consulting</span></span>
+      </a>
+      <p class="about-description" data-branding="about_description">A browser memory game with themed cards, solo play, and two-player hot-seat mode.</p>
+      <nav class="project-links" aria-label="Project links">
+        <a class="project-resource" href="https://github.com/vionix-th/vxMemory" target="_blank" rel="noopener noreferrer"><svg class="project-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 5-7 7 7 7M16 5l7 7-7 7M14 3l-4 18"/></svg><span data-branding="source_code">Source code</span><svg class="project-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M21 3l-9 9M10 3H3v18h18v-7"/></svg></a>
+        <a class="project-resource" href="https://github.com/vionix-th/vxMemory/issues" target="_blank" rel="noopener noreferrer"><svg class="project-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l2.4-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/></svg><span data-branding="report_issue">Report an issue</span><svg class="project-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M21 3l-9 9M10 3H3v18h18v-7"/></svg></a>
+        <div class="project-licenses">
+          <a href="https://github.com/vionix-th/vxMemory/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-branding="code_license">Code license (GPL-3.0-or-later)</a>
+          <a href="https://github.com/vionix-th/vxMemory/blob/main/NOTICE" target="_blank" rel="noopener noreferrer" data-branding="asset_notices">Asset notices</a>
+        </div>
+      </nav>
+      <footer class="about-footer">
+        <span class="about-copyright">© Vionix Consulting</span>
+        <button id="aboutSupportBtn" class="attribution-about" type="button"><svg class="project-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span data-branding="support_short">Support</span></button>
+      </footer>
+    </div>
   </dialog>
 
   <dialog id="supportDialog" class="support-dialog" aria-labelledby="supportTitle">
@@ -311,9 +337,11 @@
   const sizeSel = $('#size'), themeSel = $('#theme'), modeSel = $('#mode');
   const langSel = $('#lang');
   const aboutBtn = $('#aboutBtn'), aboutDialog = $('#aboutDialog');
-  aboutBtn.addEventListener('click', () => aboutDialog.showModal());
+  aboutBtn.addEventListener('click', () => { aboutBtn.focus(); aboutDialog.showModal(); });
   $('#aboutCloseBtn').addEventListener('click', () => aboutDialog.close());
-  aboutDialog.addEventListener('close', () => { if(!supportDialog.open) aboutBtn.focus(); });
+  aboutDialog.addEventListener('close', () => {
+    if(!supportDialog.open && document.activeElement === document.body) aboutBtn.focus();
+  });
   const supportBtn = $('#supportBtn'), supportDialog = $('#supportDialog');
   const supportFeedback = $('#supportFeedback'), supportExternal = $('#supportExternal');
   const supportStatus = $('#supportStatus'), supportFrameHost = $('#supportFrameHost');
@@ -322,6 +350,7 @@
   let supportTimer = null, supportOpener = null, supportDelayed = false;
   function openSupport(opener){
     if(supportDialog.open) return;
+    opener.focus();
     supportOpener = opener;
     supportDelayed = false;
     supportFeedback.hidden = false;
@@ -355,7 +384,7 @@
   supportDialog.addEventListener('close', () => {
     window.clearTimeout(supportTimer);
     supportFrameHost.replaceChildren();
-    if(supportOpener && supportOpener.isConnected) supportOpener.focus();
+    if(supportOpener && supportOpener.isConnected && document.activeElement === document.body) supportOpener.focus();
     supportOpener = null;
   });
 
@@ -746,7 +775,7 @@
       support_external: 'Open Ko-fi in new tab', support_frame: 'Support Vionix Consulting on Ko-fi',
       support_loading: 'Loading Ko-fi…', support_delayed: 'Taking longer than expected.',
       by_vionix: 'By Vionix Consulting', about: 'About', about_title: 'About vxMemory',
-      about_description: 'A browser memory game with themed cards, solo play, and two-player hot-seat mode. Created by Vionix Consulting.',
+      about_description: 'A browser memory game with themed cards, solo play, and two-player hot-seat mode.',
       visit_vionix: 'Visit Vionix Consulting', source_code: 'Source code', report_issue: 'Report an issue',
       code_license: 'Code license (GPL-3.0-or-later)', asset_notices: 'Asset notices',
       project_links: 'Project links', new_tab: 'opens in a new tab'
@@ -772,7 +801,7 @@
       support_external: 'เปิด Ko-fi ในแท็บใหม่', support_frame: 'สนับสนุน Vionix Consulting บน Ko-fi',
       support_loading: 'กำลังโหลด Ko-fi…', support_delayed: 'ใช้เวลานานกว่าที่คาดไว้',
       by_vionix: 'โดย Vionix Consulting', about: 'เกี่ยวกับ', about_title: 'เกี่ยวกับ vxMemory',
-      about_description: 'เกมความจำในเบราว์เซอร์ พร้อมการ์ดหลายธีม เล่นคนเดียวหรือผู้เล่นสองคนผลัดกันเล่น สร้างโดย Vionix Consulting',
+      about_description: 'เกมความจำในเบราว์เซอร์ พร้อมการ์ดหลายธีม เล่นคนเดียวหรือผู้เล่นสองคนผลัดกันเล่น',
       visit_vionix: 'เยี่ยมชม Vionix Consulting', source_code: 'ซอร์สโค้ด', report_issue: 'รายงานปัญหา',
       code_license: 'สัญญาอนุญาตโค้ด (GPL-3.0-or-later)', asset_notices: 'ข้อมูลสิทธิ์ของสื่อ',
       project_links: 'ลิงก์โครงการ', new_tab: 'เปิดในแท็บใหม่'
@@ -788,6 +817,8 @@
     document.querySelectorAll('[data-branding]').forEach(node => { node.textContent = t(node.dataset.branding); });
     document.querySelector('.publisher-credit').setAttribute('aria-label', `${t('by_vionix')} (${t('new_tab')})`);
     aboutDialog.querySelector('.project-links').setAttribute('aria-label', t('project_links'));
+    aboutDialog.querySelector('.about-identity').setAttribute('aria-label', `${t('visit_vionix')} (${t('new_tab')})`);
+    $('#aboutCloseBtn').setAttribute('aria-label', t('close'));
     $('#supportCloseBtn').setAttribute('aria-label', t('close'));
     for(const button of [supportBtn, $('#aboutSupportBtn')]) button.setAttribute('aria-label', t('support_action'));
     const supportFrame = supportFrameHost.querySelector('iframe');
