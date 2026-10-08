@@ -134,6 +134,15 @@
     #supportFrameHost { padding: 16px; }
   }
 
+
+/* Persistent support notice is separate from gameplay feedback. */
+.support-reminder { position: fixed; z-index: 80; right: max(16px, env(safe-area-inset-right)); bottom: max(var(--reminder-inset, 16px), env(safe-area-inset-bottom)); width: min(380px, calc(100vw - 32px)); max-height: calc(100dvh - var(--reminder-inset, 16px) - 16px); overflow-y: auto; padding: 16px; background: var(--panel); color: var(--text); border: 1px solid var(--border, #445); border-radius: 12px; box-shadow: 0 8px 28px #0005; }
+.support-reminder[hidden] { display: none; }
+.support-reminder p { margin: 0 0 12px; overflow-wrap: anywhere; }
+.support-reminder-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.support-reminder-actions button { min-height: 44px; min-width: 44px; max-width: 100%; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
+.support-reminder-actions .support-reminder-support { background: transparent; color: var(--accent); border-color: var(--accent); }
+
 </style>
 </head>
 <body>
@@ -306,6 +315,231 @@
 (() => {
   'use strict';
 
+  // Support reminder policy.
+  const FIRST_REMINDER_DELAY = 72 * 60 * 60 * 1000;
+  const REMINDER_COOLDOWN = 28 * 24 * 60 * 60 * 1000;
+  const SUPPORT_REMINDER_KEY = 'vxMemory.support-reminders';
+  function localUsageDate(now) {
+    const date = new Date(now);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  function reminderEligible(state, now, threshold) {
+    return (
+      !state.disabled &&
+      state.firstUsedAt !== null &&
+      now - state.firstUsedAt >= FIRST_REMINDER_DELAY &&
+      state.activeDays.length === 3 &&
+      state.count >= threshold &&
+      now >= state.cooldownUntil
+    );
+  }
+  function createSupportReminderStore({
+    key,
+    threshold,
+    now = Date.now,
+    storage = () => localStorage,
+    locks = () => navigator.locks,
+    changed = () => {},
+  }) {
+    let unavailable = false;
+    function read() {
+      const raw = storage().getItem(key);
+      if (raw === null)
+        return {
+          version: 1,
+          firstUsedAt: null,
+          activeDays: [],
+          count: 0,
+          cooldownUntil: 0,
+          disabled: false,
+        };
+      const state = JSON.parse(raw);
+      const timestamp = (value) =>
+        typeof value === 'number' && Number.isFinite(value) && value >= 0;
+      if (
+        !state ||
+        state.version !== 1 ||
+        !(state.firstUsedAt === null || timestamp(state.firstUsedAt)) ||
+        !timestamp(state.cooldownUntil) ||
+        typeof state.disabled !== 'boolean' ||
+        !Number.isInteger(state.count) ||
+        state.count < 0 ||
+        state.count > threshold ||
+        !Array.isArray(state.activeDays) ||
+        state.activeDays.length > 3 ||
+        new Set(state.activeDays).size !== state.activeDays.length ||
+        state.activeDays.some(
+          (day) =>
+            typeof day !== 'string' ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
+            !Number.isFinite(Date.parse(day)) ||
+            new Date(day).toISOString().slice(0, 10) !== day,
+        )
+      ) {
+        throw new Error('Invalid support reminder preferences');
+      }
+      return state;
+    }
+    async function update(change) {
+      if (unavailable) return false;
+      try {
+        const coordinator = locks();
+        if (!coordinator) {
+          unavailable = true;
+          return false;
+        }
+        return await coordinator.request(key, () => {
+          const state = read();
+          const time = now();
+          if (!Number.isFinite(time) || time < 0)
+            throw new Error('Invalid reminder clock');
+          if (!change(state, time)) return false;
+          storage().setItem(key, JSON.stringify(state));
+          changed();
+          return true;
+        });
+      } catch {
+        // Optional reminders fail closed; primary/payment operations stay independent.
+        unavailable = true;
+        return false;
+      }
+    }
+    function resetCycle(state, time) {
+      state.count = 0;
+      state.cooldownUntil = time + REMINDER_COOLDOWN;
+    }
+    return {
+      recordUsage: () =>
+        update((state, time) => {
+          if (state.disabled) return false;
+          state.firstUsedAt ??= time;
+          const day = localUsageDate(time);
+          if (state.activeDays.length < 3 && !state.activeDays.includes(day))
+            state.activeDays.push(day);
+          state.count = Math.min(threshold, state.count + 1);
+          return true;
+        }),
+      claim: (canPresent) =>
+        update((state, time) => {
+          if (!canPresent() || !reminderEligible(state, time, threshold))
+            return false;
+          resetCycle(state, time);
+          return true;
+        }),
+      postpone: () =>
+        update((state, time) => {
+          resetCycle(state, time);
+          return true;
+        }),
+      disable: () =>
+        update((state) => {
+          state.disabled = true;
+          return true;
+        }),
+    };
+  }
+  const supportReminders = createSupportReminderStore({
+    key: SUPPORT_REMINDER_KEY,
+    threshold: 3,
+    changed: () => window.dispatchEvent(new Event('support-reminder-change')),
+  });
+
+  // Support reminder presentation.
+  /** Page-session presentation; persisted cycle claims belong to the local policy store. */
+  function createSupportReminderController({
+    store,
+    safe,
+    show,
+    getSupport,
+    openSupport,
+    onVisible = () => {},
+  }) {
+    let claimed = false;
+    let checking = false;
+    let disposed = false;
+    let notice = null;
+    function clear() {
+      claimed = false;
+      notice?.destroy();
+      notice = null;
+    }
+    async function finish(disable) {
+      await (disable ? store.disable() : store.postpone());
+      clear();
+      getSupport()?.focus();
+    }
+    async function evaluate() {
+      if (disposed || checking) return;
+      try {
+        if (!safe()) {
+          if (notice && !notice.element.contains(document.activeElement))
+            notice.element.hidden = true;
+          return;
+        }
+        if (!claimed) {
+          checking = true;
+          claimed = await store.claim(safe);
+          checking = false;
+        }
+        if (disposed || !claimed) return;
+        if (!notice)
+          notice = show({
+            support: () => {
+              clear();
+              openSupport(getSupport());
+            },
+            postpone: () => finish(false),
+            disable: () => finish(true),
+          });
+        notice.element.hidden =
+          !safe() && !notice.element.contains(document.activeElement);
+        if (!notice.element.hidden) onVisible();
+      } catch {
+        checking = false;
+        clear(); // Optional presentation must not break the primary workflow.
+      }
+    }
+    const observer = new MutationObserver((records) => {
+      if (records.some((record) => !record.target.closest?.('.support-reminder')))
+        queueMicrotask(evaluate);
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
+    const events = [
+      'focus',
+      'blur',
+      'focusin',
+      'focusout',
+      'visibilitychange',
+      'storage',
+      'support-reminder-change',
+      'notifications-change',
+      'playing',
+      'pause',
+      'ended', 'resize', 'scroll',
+    ];
+    for (const name of events) window.addEventListener(name, evaluate, true);
+    window.addEventListener('support-dialog-open', clear);
+    const timer = setInterval(evaluate, 60_000);
+    void evaluate();
+    return {
+      evaluate,
+      destroy() {
+        disposed = true;
+        observer.disconnect();
+        clearInterval(timer);
+        for (const name of events)
+          window.removeEventListener(name, evaluate, true);
+        window.removeEventListener('support-dialog-open', clear);
+        clear();
+      },
+    };
+  }
+
+
   const $ = sel => document.querySelector(sel);
   const pad = n => String(n).padStart(2,'0');
   const choice = arr => arr[Math.floor(Math.random()*arr.length)];
@@ -326,6 +560,7 @@
   };
 
   let rows=4, cols=4, first=null, lock=false, moves=0, matches=0;
+  let gameplayStarted=false, gameCounted=false;
   let started=false, startTime=0, rafId=0, totalPairs=8;
   let players=1, current=0, scores=[0,0];
   let seenFacts = new Set();
@@ -349,7 +584,9 @@
   const SUPPORT_EMBED_URL = `${SUPPORT_URL}/?hidefeed=true&widget=true&embed=true&preview=true`;
   let supportTimer = null, supportOpener = null, supportDelayed = false;
   function openSupport(opener){
-    if(supportDialog.open) return;
+    if(document.querySelector("dialog[open]")) return;
+    void supportReminders.postpone();
+    window.dispatchEvent(new Event("support-dialog-open"));
     opener.focus();
     supportOpener = opener;
     supportDelayed = false;
@@ -473,6 +710,7 @@
   }
 
   function deal(){
+    gameplayStarted = false; gameCounted = false;
     board.innerHTML = '';
     first=null; lock=false; moves=0; matches=0;
     movesEl.textContent='0'; timeEl.textContent='00:00';
@@ -560,6 +798,8 @@
     const pressed = card.getAttribute('aria-pressed') === 'true';
     if(pressed) return;
 
+    gameplayStarted = true;
+    window.dispatchEvent(new Event("support-reminder-change"));
     startTimer();
     card.setAttribute('aria-pressed','true');
     if(sflip){ try{sflip.currentTime=0; sflip.play();}catch(e){} }
@@ -719,6 +959,8 @@
   }
 
   function onWin(){
+    gameplayStarted = false;
+    if (!gameCounted) { gameCounted = true; void supportReminders.recordUsage(); }
     stopTimer();
     const t = timeEl.textContent;
     if(players===2){
@@ -813,6 +1055,7 @@
     return v || key;
   }
   function applyLanguage(){
+    updateReminderCopy();
     document.documentElement.lang = lang;
     document.querySelectorAll('[data-branding]').forEach(node => { node.textContent = t(node.dataset.branding); });
     document.querySelector('.publisher-credit').setAttribute('aria-label', `${t('by_vionix')} (${t('new_tab')})`);
@@ -854,10 +1097,74 @@
   i18n.en.solo = 'Solo'; i18n.en.p2label = '2 players (hot-seat)';
   i18n.th.solo = 'เล่นคนเดียว'; i18n.th.p2label = 'ผู้เล่น 2 คน (ผลัดกัน)';
 
+
+  const REMINDER_COPY = {
+    en: { name: 'Support reminder', message: 'Finding vxMemory useful? Support its upkeep.', support: 'Support', notNow: 'Not now', never: 'Don’t remind me' },
+    th: { name: 'แจ้งเตือนการสนับสนุน', message: 'vxMemory มีประโยชน์ไหม? ร่วมสนับสนุนการดูแลแอปนี้', support: 'สนับสนุน', notNow: 'ไว้คราวหน้า', never: 'ไม่ต้องเตือนอีก' },
+  };
+  function updateReminderCopy() {
+    const card = document.querySelector('.support-reminder');
+    if (!card) return;
+    const copy = REMINDER_COPY[lang] || REMINDER_COPY.en;
+    card.setAttribute('aria-label', copy.name);
+    card.querySelectorAll('[data-reminder]').forEach((node) => { node.textContent = copy[node.dataset.reminder]; });
+  }
+  function positionReminder() {
+    const card = document.querySelector('.support-reminder');
+    if (!card) return;
+    let inset = 16;
+    const left = Math.max(16, innerWidth - 396);
+    for (const control of [supportBtn.closest('footer'), supportBtn, aboutBtn, $('#new'), $('#restart')]) {
+      if (!control) continue;
+      const rect = control.getBoundingClientRect();
+      if (rect.width && rect.right > left && rect.top >= 0 && rect.top < innerHeight && rect.bottom > innerHeight - inset - card.offsetHeight)
+        inset = Math.max(inset, innerHeight - rect.top + 12);
+    }
+    card.style.setProperty('--reminder-inset', `${inset}px`);
+  }
+  function showReminder({ support, postpone, disable }) {
+    const element = document.createElement('section');
+    element.className = 'support-reminder';
+    element.setAttribute('role', 'status');
+    element.setAttribute('aria-live', 'polite');
+    const message = document.createElement('p'); message.dataset.reminder = 'message';
+    const actions = document.createElement('div'); actions.className = 'support-reminder-actions';
+    for (const [key, run] of [['support', support], ['notNow', postpone], ['never', disable]]) {
+      const button = document.createElement('button'); button.type = 'button';
+      button.className = key === 'support' ? 'support-reminder-support' : '';
+      button.dataset.reminder = key; button.addEventListener('click', run); actions.append(button);
+    }
+    element.append(message, actions); document.body.append(element);
+    updateReminderCopy(); positionReminder();
+    let resizeFrame = 0;
+    const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(positionReminder);
+    }) : null;
+    resize?.observe(element);
+    return { element, destroy: () => { resize?.disconnect(); cancelAnimationFrame(resizeFrame); element.remove(); } };
+  }
+  function startSupportReminders() {
+    createSupportReminderController({
+      store: supportReminders,
+      safe: () => {
+        positionReminder();
+        return document.visibilityState === 'visible' && document.hasFocus() &&
+          !gameplayStarted && !lock && !document.querySelector('dialog[open]') &&
+          !document.activeElement?.matches('input, select, textarea, [contenteditable="true"]');
+      },
+      getSupport: () => supportBtn,
+      openSupport,
+      show: showReminder,
+      onVisible: positionReminder,
+    });
+  }
+
   // Initialize from cookies then start
   loadSettings();
   applyLanguage();
   deal();
+  startSupportReminders();
 })();
 </script>
 </body>
