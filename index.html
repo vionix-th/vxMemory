@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>vmMemory</title>
+<title>vxMemory</title>
+<meta name="description" content="vxMemory — a browser memory game by Vionix Consulting, with solo and two-player modes and themed cards." />
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --accent:#6cf; --win:#20c997; --text:#e8ecf1;
@@ -12,6 +13,7 @@
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
+    height:auto; min-height:100%;
     margin:0; font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial;
     background:radial-gradient(1200px 800px at 70% -10%, #192042 0%, #0f1220 60%);
     color:var(--text); display:flex; align-items:center; justify-content:center; padding:18px;
@@ -82,12 +84,25 @@
     background-size: cover, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;
   }
 
+  /* Publisher credit and project resources follow the active game theme. */
+  .publisher-attribution{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:8px;border-top:1px solid #2d365c}
+  .publisher-credit{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--text);font-size:12px;text-underline-offset:3px}
+  .publisher-credit img{padding:3px;background:#fff;border-radius:5px;object-fit:contain}
+  .publisher-credit:focus-visible,.project-links a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .attribution-about{min-height:44px;font-size:14px}
+  .about-dialog{width:min(480px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--panel);color:var(--text);border:1px solid #2d365c}
+  .about-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .about-dialog-header h2{margin:0;font-size:20px}
+  .about-dialog p{line-height:1.6}
+  .project-links{display:flex;flex-wrap:wrap;gap:4px 16px}
+  .project-links a{display:inline-flex;align-items:center;min-height:44px;color:var(--text);text-underline-offset:3px}
+  .about-copyright{font-size:12px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <aside class="panel">
-      <h1>vmMemory</h1>
+      <h1>vxMemory</h1>
 
       <div class="row">
         <label for="size">Board</label>
@@ -164,6 +179,13 @@
       <div class="row a11y">
         Keyboard: arrows to move, Enter/Space to flip. Screen reader updates live.
       </div>
+      <footer class="publisher-attribution">
+        <a class="publisher-credit" href="https://vionix.cloud" target="_blank" rel="noopener noreferrer">
+          <img src="assets/branding/vionix-logo.png" width="24" height="24" alt="" />
+          <span data-branding="by_vionix">By Vionix Consulting</span>
+        </a>
+        <button id="aboutBtn" type="button" class="attribution-about" data-branding="about">About</button>
+      </footer>
       <div aria-live="polite" aria-atomic="true" class="sr" id="live" style="position:absolute;left:-9999px"></div>
     </aside>
 
@@ -191,6 +213,22 @@
       <button id="factPlay">Play</button>
       <button id="factClose" class="primary">Got it</button>
     </div>
+  </dialog>
+
+  <dialog id="aboutDialog" class="about-dialog" aria-labelledby="aboutTitle">
+    <div class="about-dialog-header">
+      <h2 id="aboutTitle" data-branding="about_title">About vxMemory</h2>
+      <button id="aboutCloseBtn" type="button" class="attribution-about" data-branding="close" autofocus>Close</button>
+    </div>
+    <p data-branding="about_description">A browser memory game with themed cards, solo play, and two-player hot-seat mode. Created by Vionix Consulting.</p>
+    <nav class="project-links" aria-label="Project links">
+      <a href="https://vionix.cloud" target="_blank" rel="noopener noreferrer" data-branding="visit_vionix">Visit Vionix Consulting</a>
+      <a href="https://github.com/vionix-th/vxMemory" target="_blank" rel="noopener noreferrer" data-branding="source_code">Source code</a>
+      <a href="https://github.com/vionix-th/vxMemory/issues" target="_blank" rel="noopener noreferrer" data-branding="report_issue">Report an issue</a>
+      <a href="https://github.com/vionix-th/vxMemory/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-branding="code_license">Code license (GPL-3.0-or-later)</a>
+      <a href="https://github.com/vionix-th/vxMemory/blob/main/NOTICE" target="_blank" rel="noopener noreferrer" data-branding="asset_notices">Asset notices</a>
+    </nav>
+    <p class="about-copyright">© Vionix Consulting</p>
   </dialog>
 
   <!-- Simple sounds -->
@@ -234,6 +272,10 @@
   const board = $('#board'), timeEl = $('#time'), movesEl = $('#moves');
   const sizeSel = $('#size'), themeSel = $('#theme'), modeSel = $('#mode');
   const langSel = $('#lang');
+  const aboutBtn = $('#aboutBtn'), aboutDialog = $('#aboutDialog');
+  aboutBtn.addEventListener('click', () => aboutDialog.showModal());
+  $('#aboutCloseBtn').addEventListener('click', () => aboutDialog.close());
+  aboutDialog.addEventListener('close', () => aboutBtn.focus());
   const factsToggle = $('#factsToggle');
   const resetFactsBtn = $('#resetFacts');
   const speakToggle = $('#speakToggle');
@@ -616,7 +658,12 @@
       tie: 'Tie', p1_wins: 'Player 1 wins', p2_wins: 'Player 2 wins', new_best: 'New best.',
       fact_default: 'You matched “{name}”.',
       reset_facts: 'Reset shown facts',
-      facts_reset_done: 'Fun facts reset for this theme.'
+      facts_reset_done: 'Fun facts reset for this theme.',
+      by_vionix: 'By Vionix Consulting', about: 'About', about_title: 'About vxMemory',
+      about_description: 'A browser memory game with themed cards, solo play, and two-player hot-seat mode. Created by Vionix Consulting.',
+      visit_vionix: 'Visit Vionix Consulting', source_code: 'Source code', report_issue: 'Report an issue',
+      code_license: 'Code license (GPL-3.0-or-later)', asset_notices: 'Asset notices',
+      project_links: 'Project links', new_tab: 'opens in a new tab'
     },
     th: {
       board: 'กระดาน', symbols: 'สัญลักษณ์', mode: 'โหมด', language: 'ภาษา', facts: 'ข้อเท็จจริงสนุกเมื่อจับคู่ได้',
@@ -634,7 +681,12 @@
       tie: 'เสมอ', p1_wins: 'ผู้เล่น 1 ชนะ', p2_wins: 'ผู้เล่น 2 ชนะ', new_best: 'สถิติใหม่',
       fact_default: 'คุณจับคู่ “{name}” ได้',
       reset_facts: 'รีเซ็ตข้อเท็จจริงที่เปิดแล้ว',
-      facts_reset_done: 'ล้างข้อเท็จจริงของธีมนี้แล้ว'
+      facts_reset_done: 'ล้างข้อเท็จจริงของธีมนี้แล้ว',
+      by_vionix: 'โดย Vionix Consulting', about: 'เกี่ยวกับ', about_title: 'เกี่ยวกับ vxMemory',
+      about_description: 'เกมความจำในเบราว์เซอร์ พร้อมการ์ดหลายธีม เล่นคนเดียวหรือผู้เล่นสองคนผลัดกันเล่น สร้างโดย Vionix Consulting',
+      visit_vionix: 'เยี่ยมชม Vionix Consulting', source_code: 'ซอร์สโค้ด', report_issue: 'รายงานปัญหา',
+      code_license: 'สัญญาอนุญาตโค้ด (GPL-3.0-or-later)', asset_notices: 'ข้อมูลสิทธิ์ของสื่อ',
+      project_links: 'ลิงก์โครงการ', new_tab: 'เปิดในแท็บใหม่'
     }
   };
   function t(key, params){
@@ -643,6 +695,10 @@
     return v || key;
   }
   function applyLanguage(){
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-branding]').forEach(node => { node.textContent = t(node.dataset.branding); });
+    document.querySelector('.publisher-credit').setAttribute('aria-label', `${t('by_vionix')} (${t('new_tab')})`);
+    aboutDialog.querySelector('.project-links').setAttribute('aria-label', t('project_links'));
     $('#labelMoves').textContent = t('moves');
     $('#labelTime').textContent = t('time');
     $('#labelP1').textContent = t('player1');

@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-This repo hosts vmMemory, a single‑file, vanilla‑JS memory game with no build step. Keep changes small, focused, and friendly to static hosting.
+This repo hosts vxMemory, a single‑file, vanilla‑JS memory game with no build step. Keep changes small, focused, and friendly to static hosting.
 
 ## Project Structure & Module Organization
 - `index.html`: Entire app (HTML, CSS, JS inlined). `THEMES` defines symbol sets and game data.

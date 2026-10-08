@@ -1,4 +1,4 @@
-# vmMemory
+# vxMemory
 
 A minimalist, single‑file memory game built with vanilla JavaScript, HTML, and CSS. No build tools, no dependencies — just open and play.
 
@@ -34,4 +34,8 @@ See `AGENTS.md` for coding style, testing checks, and PR guidelines. Keep change
 - External audio is hotlinked from actions.google.com/sounds and is not included in this repo.
 
 ## Copyright
-© 2025 Vionix Consulting. vmMemory is free software released under the GNU GPL v3.0 or later.
+© 2025 Vionix Consulting. vxMemory is free software released under the GNU GPL v3.0 or later.
+
+## Publisher attribution
+
+The public product name is vxMemory. Existing cookie and best-score storage keys retain their identifiers so saved preferences and scores remain available. The control panel links to [Vionix Consulting](https://vionix.cloud) with a locally bundled publisher logo. About opens a native English/Thai dialog with purpose, source repository, issue tracker, GPL code license, and asset notices. Escape and Close dismiss the dialog and restore focus to About. Donation support is a separate planned step.
