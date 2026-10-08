@@ -97,17 +97,26 @@
   .project-links{display:flex;flex-wrap:wrap;gap:4px 16px}
   .project-links a{display:inline-flex;align-items:center;min-height:44px;color:var(--text);text-underline-offset:3px}
   .about-copyright{font-size:12px}
-  /* Optional support retains active theme and existing game state. */
-  .support-dialog{width:min(560px,calc(100% - 16px));max-height:calc(100dvh - 16px);overflow:hidden;padding:0;background:var(--panel);color:var(--text);border:1px solid #2d365c}
+  /* Compact project actions and provider-owned checkout. */
+  .publisher-attribution{justify-content:space-between;gap:4px 12px}
+  .project-actions{display:flex;align-items:center;gap:4px}
+  .publisher-attribution .attribution-about{border:0;background:transparent;box-shadow:none;padding:8px 10px;color:var(--text);font-size:12px}
+  .publisher-credit{text-decoration:none;opacity:.85}
+  .publisher-credit:hover{text-decoration:underline;opacity:1}
+  .support-dialog{width:min(480px,calc(100% - 16px));max-height:calc(100dvh - 16px);overflow:hidden;padding:0;background:var(--panel);color:var(--text);border:1px solid #2d365c}
   .support-dialog[open]{display:flex;flex-direction:column}
-  .support-header{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #2d365c}
-  .support-header h2{margin:0;font-size:20px;overflow-wrap:anywhere}
-  .support-header button{flex-shrink:0}
-  .support-header button:focus-visible,.support-body a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .support-body{min-height:0;overflow:auto;padding:16px}
-  .support-body p{line-height:1.6}
-  .support-body a{display:inline-flex;align-items:center;min-height:44px;color:var(--accent);text-underline-offset:3px}
-  .support-body iframe{display:block;width:100%;height:712px;margin-top:16px;border:0;background:#f9f9f9;color-scheme:light}
+  .support-header{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid #2d365c}
+  .support-header h2{margin:0;font-size:18px;overflow-wrap:anywhere}
+  .support-close{flex-shrink:0;width:44px;height:44px;border:0;border-radius:50%;padding:0;background:transparent;color:var(--text);font-size:28px}
+  .support-close:hover{background:rgba(128,128,128,.12)}
+  .support-close:focus-visible,.support-feedback a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .support-body{position:relative;min-height:0;overflow:auto;padding:0;background:#f9f9f9}
+  .support-feedback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:#f9f9f9;color:#343444;text-align:center}
+  .support-feedback[hidden],.support-feedback a[hidden]{display:none}
+  .support-feedback p{margin:0;line-height:1.6}
+  .support-feedback a{display:inline-flex;align-items:center;min-height:44px;color:#343444;text-underline-offset:3px}
+  .support-body iframe{display:block;width:100%;height:712px;border:0;background:#f9f9f9;color-scheme:light}
+
 </style>
 </head>
 <body>
@@ -195,8 +204,10 @@
           <img src="assets/branding/vionix-logo.png" width="24" height="24" alt="" />
           <span data-branding="by_vionix">By Vionix Consulting</span>
         </a>
+        <div class="project-actions">
         <button id="aboutBtn" type="button" class="attribution-about" data-branding="about">About</button>
-        <button id="supportBtn" type="button" class="attribution-about" data-branding="support_action">Support this project</button>
+        <button id="supportBtn" type="button" class="attribution-about" data-branding="support_short">Support this project</button>
+        </div>
       </footer>
       <div aria-live="polite" aria-atomic="true" class="sr" id="live" style="position:absolute;left:-9999px"></div>
     </aside>
@@ -240,19 +251,20 @@
       <a href="https://github.com/vionix-th/vxMemory/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-branding="code_license">Code license (GPL-3.0-or-later)</a>
       <a href="https://github.com/vionix-th/vxMemory/blob/main/NOTICE" target="_blank" rel="noopener noreferrer" data-branding="asset_notices">Asset notices</a>
     </nav>
-    <button id="aboutSupportBtn" type="button" class="attribution-about" data-branding="support_action">Support this project</button>
+    <button id="aboutSupportBtn" type="button" class="attribution-about" data-branding="support_short">Support this project</button>
     <p class="about-copyright">© Vionix Consulting</p>
   </dialog>
 
   <dialog id="supportDialog" class="support-dialog" aria-labelledby="supportTitle">
     <header class="support-header">
       <h2 id="supportTitle" data-branding="support_title">Support vxMemory</h2>
-      <button id="supportCloseBtn" type="button" class="attribution-about" data-branding="close" autofocus>Close</button>
+      <button id="supportCloseBtn" type="button" class="support-close" autofocus><span aria-hidden="true">×</span></button>
     </header>
     <div class="support-body">
-      <p data-branding="support_description">Optional one-time or monthly support helps maintain vxMemory and other free Vionix projects. Contributions go to Vionix Consulting through Ko-fi. Donating is not required to use this app.</p>
-      <a href="https://ko-fi.com/vionixconsulting" target="_blank" rel="noopener noreferrer" data-branding="support_external">Open Ko-fi in new tab</a>
-      <p id="supportStatus" role="status"></p>
+      <div id="supportFeedback" class="support-feedback">
+        <p id="supportStatus" role="status"></p>
+        <a id="supportExternal" href="https://ko-fi.com/vionixconsulting" target="_blank" rel="noopener noreferrer" data-branding="support_external" hidden>Open Ko-fi in new tab</a>
+      </div>
       <div id="supportFrameHost"></div>
     </div>
   </dialog>
@@ -301,8 +313,9 @@
   const aboutBtn = $('#aboutBtn'), aboutDialog = $('#aboutDialog');
   aboutBtn.addEventListener('click', () => aboutDialog.showModal());
   $('#aboutCloseBtn').addEventListener('click', () => aboutDialog.close());
-  aboutDialog.addEventListener('close', () => aboutBtn.focus());
+  aboutDialog.addEventListener('close', () => { if(!supportDialog.open) aboutBtn.focus(); });
   const supportBtn = $('#supportBtn'), supportDialog = $('#supportDialog');
+  const supportFeedback = $('#supportFeedback'), supportExternal = $('#supportExternal');
   const supportStatus = $('#supportStatus'), supportFrameHost = $('#supportFrameHost');
   const SUPPORT_URL = 'https://ko-fi.com/vionixconsulting';
   const SUPPORT_EMBED_URL = `${SUPPORT_URL}/?hidefeed=true&widget=true&embed=true&preview=true`;
@@ -311,6 +324,8 @@
     if(supportDialog.open) return;
     supportOpener = opener;
     supportDelayed = false;
+    supportFeedback.hidden = false;
+    supportExternal.hidden = true;
     supportStatus.hidden = false;
     supportStatus.textContent = t('support_loading');
     const frame = document.createElement('iframe');
@@ -320,10 +335,12 @@
     supportTimer = window.setTimeout(() => {
       supportDelayed = true;
       supportStatus.textContent = t('support_delayed');
+      supportExternal.hidden = false;
     }, 10_000);
     frame.addEventListener('load', () => {
       window.clearTimeout(supportTimer);
       supportStatus.hidden = true;
+      supportFeedback.hidden = true;
     });
     supportFrameHost.replaceChildren(frame);
     supportDialog.showModal();
@@ -725,10 +742,9 @@
       fact_default: 'You matched “{name}”.',
       reset_facts: 'Reset shown facts',
       facts_reset_done: 'Fun facts reset for this theme.',
-      support_action: 'Support this project', support_title: 'Support vxMemory',
-      support_description: 'Optional one-time or monthly support helps maintain vxMemory and other free Vionix projects. Contributions go to Vionix Consulting through Ko-fi. Donating is not required to use this app.',
+      support_action: 'Support this project', support_short: 'Support', support_title: 'Support vxMemory',
       support_external: 'Open Ko-fi in new tab', support_frame: 'Support Vionix Consulting on Ko-fi',
-      support_loading: 'Loading Ko-fi…', support_delayed: 'Taking longer than expected. Try opening Ko-fi in a new tab.',
+      support_loading: 'Loading Ko-fi…', support_delayed: 'Taking longer than expected.',
       by_vionix: 'By Vionix Consulting', about: 'About', about_title: 'About vxMemory',
       about_description: 'A browser memory game with themed cards, solo play, and two-player hot-seat mode. Created by Vionix Consulting.',
       visit_vionix: 'Visit Vionix Consulting', source_code: 'Source code', report_issue: 'Report an issue',
@@ -752,10 +768,9 @@
       fact_default: 'คุณจับคู่ “{name}” ได้',
       reset_facts: 'รีเซ็ตข้อเท็จจริงที่เปิดแล้ว',
       facts_reset_done: 'ล้างข้อเท็จจริงของธีมนี้แล้ว',
-      support_action: 'สนับสนุนโครงการนี้', support_title: 'สนับสนุน vxMemory',
-      support_description: 'การสนับสนุนโดยสมัครใจแบบครั้งเดียวหรือรายเดือนช่วยดูแล vxMemory และโครงการ Vionix อื่น ๆ ที่ให้ใช้ฟรี เงินสนับสนุนส่งให้ Vionix Consulting ผ่าน Ko-fi ไม่จำเป็นต้องบริจาคเพื่อใช้แอปนี้',
+      support_action: 'สนับสนุนโครงการนี้', support_short: 'สนับสนุน', support_title: 'สนับสนุน vxMemory',
       support_external: 'เปิด Ko-fi ในแท็บใหม่', support_frame: 'สนับสนุน Vionix Consulting บน Ko-fi',
-      support_loading: 'กำลังโหลด Ko-fi…', support_delayed: 'ใช้เวลานานกว่าที่คาดไว้ ลองเปิด Ko-fi ในแท็บใหม่',
+      support_loading: 'กำลังโหลด Ko-fi…', support_delayed: 'ใช้เวลานานกว่าที่คาดไว้',
       by_vionix: 'โดย Vionix Consulting', about: 'เกี่ยวกับ', about_title: 'เกี่ยวกับ vxMemory',
       about_description: 'เกมความจำในเบราว์เซอร์ พร้อมการ์ดหลายธีม เล่นคนเดียวหรือผู้เล่นสองคนผลัดกันเล่น สร้างโดย Vionix Consulting',
       visit_vionix: 'เยี่ยมชม Vionix Consulting', source_code: 'ซอร์สโค้ด', report_issue: 'รายงานปัญหา',
@@ -773,6 +788,8 @@
     document.querySelectorAll('[data-branding]').forEach(node => { node.textContent = t(node.dataset.branding); });
     document.querySelector('.publisher-credit').setAttribute('aria-label', `${t('by_vionix')} (${t('new_tab')})`);
     aboutDialog.querySelector('.project-links').setAttribute('aria-label', t('project_links'));
+    $('#supportCloseBtn').setAttribute('aria-label', t('close'));
+    for(const button of [supportBtn, $('#aboutSupportBtn')]) button.setAttribute('aria-label', t('support_action'));
     const supportFrame = supportFrameHost.querySelector('iframe');
     if(supportFrame) supportFrame.title = t('support_frame');
     if(supportDialog.open && !supportStatus.hidden) supportStatus.textContent = t(supportDelayed ? 'support_delayed' : 'support_loading');
