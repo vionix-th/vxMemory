@@ -188,7 +188,7 @@
 .donation-receiving { display: grid; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--donation-border); border-radius: 8px; background: var(--donation-raised); }
 .donation-address-details { display: grid; gap: 4px; min-width: 0; }
 .donation-address-label { color: var(--donation-muted); font-size: 12px; }
-.donation-address { display: block; min-width: 0; min-height: 1.65em; margin: 0; padding: 0; border: 0; background: transparent; border-radius: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.65; user-select: all; }
+.donation-address { display: block; min-width: 0; min-height: 1.65em; margin: 0; padding: 0; border: 0; background: transparent; border-radius: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.65; color: var(--donation-accent); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; user-select: all; }
 .donation-copy { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 7px; color: var(--donation-on-accent); background: var(--donation-accent); font: inherit; font-size: 12px; font-weight: 600; }
 .donation-copy:hover { background: var(--donation-accent-hover); }
 .donation-copy:disabled { cursor: not-allowed; opacity: .5; }
@@ -423,14 +423,21 @@
 
   const donationNetworks = [
     { id: 'bitcoin', name: 'Bitcoin', icon: 'bitcoin', assets: 'BTC', address: 'bc1qesd92qv7h3mlh4qqs4grz3e32phvxj6spwkcyz' },
-    { id: 'ethereum', name: 'Ethereum Mainnet', icon: 'ethereum', assets: 'ETH, USDC, USDT and other tokens', address: evmAddress },
+    { id: 'ethereum', name: 'Ethereum Mainnet', icon: 'ethereum', assets: 'ETH, USDC, USDT and other tokens', chainId: 1, address: evmAddress },
     { id: 'solana', name: 'Solana', icon: 'solana', assets: 'SOL, USDC, USDT and other tokens', address: '7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy' },
-    { id: 'base', name: 'Base', icon: 'base', assets: 'ETH, USDC, USDT and other tokens', address: evmAddress },
-    { id: 'arbitrum', name: 'Arbitrum One', icon: 'arbitrum', assets: 'ETH, USDC, USDT and other tokens', address: evmAddress },
-    { id: 'optimism', name: 'Optimism', icon: 'optimism', assets: 'ETH, USDC, USDT and other tokens', address: evmAddress },
-    { id: 'polygon', name: 'Polygon PoS', icon: 'polygon', assets: 'POL, USDC, USDT and other tokens', address: evmAddress },
-    { id: 'bnb', name: 'BNB Smart Chain', icon: 'bnb', assets: 'BNB, USDC, USDT and other tokens', address: evmAddress },
+    { id: 'base', name: 'Base', icon: 'base', assets: 'ETH, USDC, USDT and other tokens', chainId: 8453, address: evmAddress },
+    { id: 'arbitrum', name: 'Arbitrum One', icon: 'arbitrum', assets: 'ETH, USDC, USDT and other tokens', chainId: 42161, address: evmAddress },
+    { id: 'optimism', name: 'Optimism', icon: 'optimism', assets: 'ETH, USDC, USDT and other tokens', chainId: 10, address: evmAddress },
+    { id: 'polygon', name: 'Polygon PoS', icon: 'polygon', assets: 'POL, USDC, USDT and other tokens', chainId: 137, address: evmAddress },
+    { id: 'bnb', name: 'BNB Smart Chain', icon: 'bnb', assets: 'BNB, USDC, USDT and other tokens', chainId: 56, address: evmAddress },
   ];
+
+  // Standard wallet payment URIs; amounts remain donor-entered.
+  function donationWalletUri(network) {
+    return network.chainId === undefined
+      ? `${network.id}:${network.address}`
+      : `ethereum:${network.address}@${network.chainId}`;
+  }
 
   /** Select-only combobox; a native popover keeps icon rows above the dialog's scroll area. */
   function donationNetworkSelector(id, networks, onChange, text) {
@@ -598,7 +605,7 @@
       copyLabel.textContent = text('copyAddress');
       setCopyFeedback('');
     }
-    const address = el('code', { id: `${id}-address`, class: 'donation-address', tabindex: '0' });
+    const address = el('a', { id: `${id}-address`, class: 'donation-address', tabindex: '0' });
     const assets = el('p', { class: 'donation-assets' });
     const network = donationNetworkSelector(id, donationNetworks, (selected) => {
       destination = selected;
@@ -646,6 +653,7 @@
       copy.disabled = false;
       resetCopyFeedback();
       address.textContent = destination.address;
+      address.href = donationWalletUri(destination);
       assets.textContent = destination.id === 'bitcoin' ? 'BTC' : text('assets', { asset: destination.assets.split(',')[0] });
       qrHost.replaceChildren(addressQRCode(destination.address, text('qrLabel', { network: destination.name })));
     }
