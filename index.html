@@ -188,7 +188,7 @@
 .donation-receiving { display: grid; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--donation-border); border-radius: 8px; background: var(--donation-raised); }
 .donation-address-details { display: grid; gap: 4px; min-width: 0; }
 .donation-address-label { color: var(--donation-muted); font-size: 12px; }
-.donation-address { display: block; min-width: 0; min-height: 3.3em; margin: 0; padding: 0; border: 0; background: transparent; border-radius: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.65; color: var(--donation-accent); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; user-select: all; }
+.donation-address { display: block; min-width: 0; min-height: 4.95em; margin: 0; padding: 0; border: 0; background: transparent; border-radius: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.65; color: var(--donation-accent); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; user-select: all; }
 .donation-copy { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 7px; color: var(--donation-on-accent); background: var(--donation-accent); font: inherit; font-size: 12px; font-weight: 600; }
 .donation-copy:hover { background: var(--donation-accent-hover); }
 .donation-copy:disabled { cursor: not-allowed; opacity: .5; }
@@ -433,14 +433,15 @@
     { id: 'optimism', name: 'Optimism', icon: 'optimism', assets: 'ETH, USDC, USDT and other tokens', chainId: 10, address: evmAddress },
     { id: 'polygon', name: 'Polygon PoS', icon: 'polygon', assets: 'POL, USDC, USDT and other tokens', chainId: 137, address: evmAddress },
     { id: 'bnb', name: 'BNB Smart Chain', icon: 'bnb', assets: 'BNB, USDC, USDT and other tokens', chainId: 56, address: evmAddress },
-    { id: 'zcash', name: 'Zcash', icon: 'zcash', assets: 'ZEC', address: 't1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy' },
+    { id: 'zcash', name: 'Zcash Transparent', icon: 'zcash', assets: 'ZEC', address: 't1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy' },
+    { id: 'zcash-shielded', name: 'Zcash Shielded', icon: 'zcash', assets: 'ZEC', uriScheme: 'zcash', address: 'u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0' },
     { id: 'monero', name: 'Monero', icon: 'monero', assets: 'XMR', address: '47XCwRMTyEvav4QMqeh8ChaLg4Ubt7ASSWvyW9BG8vB19wXUS4E7C1qWkFnyzFFoTcf8AAmrUDG11EE2B6GFgFAWArkriQd' },
   ];
 
   // Standard wallet payment URIs; amounts remain donor-entered.
   function donationWalletUri(network) {
     return network.chainId === undefined
-      ? `${network.id}:${network.address}`
+      ? `${network.uriScheme ?? network.id}:${network.address}`
       : `ethereum:${network.address}@${network.chainId}`;
   }
 
